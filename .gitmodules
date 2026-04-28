@@ -1,6 +1,6 @@
 [submodule "picoruby"]
 	path = picoruby
-	url = ../picoruby
+	url = https://github.com/yuyu1815/picoruby.git
 [submodule "tools/ruby_debug_ide"]
 	path = tools/ruby_debug_ide
-	url = ../ruby_debug_ide
+	url = https://github.com/yuyu1815/ruby_debug_ide.git
