@@ -21,6 +21,7 @@ MRuby::CrossBuild.new("esp32-femtoruby") do |conf|
   conf.cc.defines << "PICORB_INT64"
   conf.cc.defines << "NDEBUG"
   conf.cc.defines << "CONFIG_ESP_WIFI_ENABLED" unless ENV['CONFIG_ESP_WIFI_ENABLED'].to_s.empty?
+  conf.cc.defines << "PICORUBY_DISABLE_ESP_WIFI" unless ENV['PICORUBY_DISABLE_ESP_WIFI'].to_s.empty?
 
   conf.femtoruby(alloc_libc: false)
   conf.gembox 'minimum'
