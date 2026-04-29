@@ -2,6 +2,7 @@
 #include <nvs_flash.h>
 #include <esp_heap_caps.h>
 #include <esp_psram.h>
+#include <esp_timer.h>
 #include "picoruby.h"
 #include "sdkconfig.h"
 #include "driver/uart_vfs.h"
@@ -17,6 +18,8 @@
 #endif
 
 #include "mrb/main_task.c"
+
+#define AI_BOOT_MARK(stage) printf("AI_BOOT stage=%s uptime_us=%lld\n", stage, (long long)esp_timer_get_time())
 
 #ifndef HEAP_SIZE
 #if defined(CONFIG_SPIRAM)
@@ -36,6 +39,7 @@ mrb_state *global_mrb = NULL;
 void
 setup(void)
 {
+  AI_BOOT_MARK("setup_start");
   /* Disable VFS line ending conversion globally (TX and RX) so that binary
    * data is never mangled. Terminal emulators that require CRLF on TX should
    * handle it on the host side. This matches the RP2040 behaviour. */
@@ -53,6 +57,7 @@ setup(void)
     ret = nvs_flash_init();
   }
   ESP_ERROR_CHECK(ret);
+  AI_BOOT_MARK("nvs_init_done");
 
 #if defined(CONFIG_SPIRAM)
   caps = MALLOC_CAP_SPIRAM;
@@ -62,6 +67,12 @@ setup(void)
     printf("Failed to allocate heap pool\n");
     return;
   }
+  printf("AI_BOOT stage=heap_alloc_done uptime_us=%lld heap_size=%u caps=%u internal_free=%u spiram_free=%u\n",
+    (long long)esp_timer_get_time(),
+    (unsigned int)HEAP_SIZE,
+    (unsigned int)caps,
+    (unsigned int)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+    (unsigned int)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
 void
@@ -78,21 +89,26 @@ teardown(void)
 void
 picoruby_esp32(void)
 {
+  AI_BOOT_MARK("picoruby_esp32_start");
   setup();
 
 #if defined(PICORB_VM_MRUBYC)
   mrbc_init(heap_pool, HEAP_SIZE);
+  AI_BOOT_MARK("mrbc_init_done");
 
   mrbc_tcb *main_tcb = mrbc_create_task(main_task, 0);
   mrbc_set_task_name(main_tcb, "main_task");
   mrbc_vm *vm = &main_tcb->vm;
 
   picoruby_init_require(vm);
+  AI_BOOT_MARK("require_init_done");
   mrbc_run();
 #elif defined(PICORB_VM_MRUBY)
   mrb_state *mrb = mrb_open_with_custom_alloc(heap_pool, HEAP_SIZE);
+  AI_BOOT_MARK("mrb_open_done");
   global_mrb = mrb;
   mrc_irep *irep = mrb_read_irep(mrb, main_task);
+  AI_BOOT_MARK("main_task_irep_read_done");
   mrc_ccontext *cc = mrc_ccontext_new(mrb);
   mrb_value name = mrb_str_new_lit(mrb, "R2P2");
   mrb_value task = mrc_create_task(cc, irep, name, mrb_nil_value(), mrb_obj_value(mrb->top_self));
@@ -107,8 +123,10 @@ picoruby_esp32(void)
     mrb_print_error(mrb);
   }
   mrb_close(mrb);
+  AI_BOOT_MARK("mrb_close_done");
   mrc_ccontext_free(cc);
 #endif
 
   teardown();
+  AI_BOOT_MARK("teardown_done");
 }
