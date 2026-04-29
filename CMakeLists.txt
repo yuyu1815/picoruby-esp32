@@ -97,6 +97,7 @@ idf_component_register(
     esp_hw_support
     spi_flash
     nvs_flash
+    mbedtls
     esp_wifi
     esp_psram
     esp_driver_usb_serial_jtag
@@ -118,6 +119,7 @@ set(MRUBY_ENV
   MRUBY_CONFIG=${MRUBY_CONFIG_STRING}
   CONFIG_IDF_TARGET=${CONFIG_IDF_TARGET}
   CONFIG_ESP_WIFI_ENABLED=${CONFIG_ESP_WIFI_ENABLED}
+  C_INCLUDE_PATH=${COMPONENT_DIR}/picoruby/mrbgems/picoruby-mbedtls/lib/mbedtls/include:${IDF_PATH}/components/mbedtls/mbedtls/include:${IDF_PATH}/components/mbedtls/port/include
 )
 
 # Build PicoRuby
