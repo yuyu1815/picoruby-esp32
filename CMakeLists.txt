@@ -39,6 +39,12 @@ endif()
 
 if(CONFIG_ESP_WIFI_ENABLED)
   list(APPEND ADDITIONAL_DEFINITIONS -DCONFIG_ESP_WIFI_ENABLED)
+  list(APPEND ADDITIONAL_PRIV_REQUIRES esp_wifi)
+endif()
+if(PICORUBY_DISABLE_ESP_WIFI)
+  list(REMOVE_ITEM ADDITIONAL_DEFINITIONS -DCONFIG_ESP_WIFI_ENABLED)
+  list(REMOVE_ITEM ADDITIONAL_PRIV_REQUIRES esp_wifi)
+  list(APPEND ADDITIONAL_DEFINITIONS -DPICORUBY_DISABLE_ESP_WIFI)
 endif()
 
 idf_component_register(
@@ -97,7 +103,8 @@ idf_component_register(
     esp_hw_support
     spi_flash
     nvs_flash
-    esp_wifi
+    mbedtls
+    ${ADDITIONAL_PRIV_REQUIRES}
     esp_psram
     esp_driver_usb_serial_jtag
 )
@@ -118,6 +125,8 @@ set(MRUBY_ENV
   MRUBY_CONFIG=${MRUBY_CONFIG_STRING}
   CONFIG_IDF_TARGET=${CONFIG_IDF_TARGET}
   CONFIG_ESP_WIFI_ENABLED=${CONFIG_ESP_WIFI_ENABLED}
+  PICORUBY_DISABLE_ESP_WIFI=${PICORUBY_DISABLE_ESP_WIFI}
+  C_INCLUDE_PATH=${COMPONENT_DIR}/picoruby/mrbgems/picoruby-mbedtls/lib/mbedtls/include:${IDF_PATH}/components/mbedtls/mbedtls/include:${IDF_PATH}/components/mbedtls/port/include
 )
 
 # Build PicoRuby
